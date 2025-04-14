@@ -20,14 +20,18 @@ import {
   Chip,
   InputAdornment,
   TextField,
-  Grid
+  Grid,
+  MenuItem,
+  Divider
 } from '@mui/material';
-import { fetchTrades, fetchChartData, deleteTrade } from '../services/api';
+import { fetchTrades, fetchChartData, deleteTrade, updateTrade } from '../services/api';
 import { format } from 'date-fns';
 import SearchIcon from '@mui/icons-material/Search';
 import DeleteIcon from '@mui/icons-material/Delete';
 import InfoIcon from '@mui/icons-material/Info';
+import EditIcon from '@mui/icons-material/Edit';
 import { Line } from 'react-chartjs-2';
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -64,6 +68,20 @@ const TradeHistory = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [tradeToDelete, setTradeToDelete] = useState(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [tradeToEdit, setTradeToEdit] = useState(null);
+  const [editFormData, setEditFormData] = useState({
+    ticker: '',
+    direction: 'Buy',
+    volume: '',
+    entry_price: '',
+    stop_loss: '',
+    target_price: '',
+    entry_date: new Date(),
+    exit_date: new Date(),
+    exit_price: ''
+  });
+  const [editLoading, setEditLoading] = useState(false);
   
   // Fetch trades data
   useEffect(() => {
@@ -221,6 +239,75 @@ const TradeHistory = () => {
     } catch (err) {
       console.error('Error deleting trade:', err);
       // You could show an error notification here
+    }
+  };
+  
+  const handleEditTrade = (trade) => {
+    setTradeToEdit(trade);
+    setEditFormData({
+      ticker: trade.ticker,
+      direction: trade.direction,
+      volume: trade.volume.toString(),
+      entry_price: trade.entry_price.toString(),
+      stop_loss: trade.stop_loss.toString(),
+      target_price: trade.target_price.toString(),
+      entry_date: new Date(trade.entry_date),
+      exit_date: new Date(trade.exit_date),
+      exit_price: trade.exit_price.toString()
+    });
+    setEditModalOpen(true);
+  };
+  
+  const handleCloseEditModal = () => {
+    setEditModalOpen(false);
+    setTradeToEdit(null);
+  };
+  
+  const handleEditFormChange = (e) => {
+    const { name, value } = e.target;
+    setEditFormData({ ...editFormData, [name]: value });
+  };
+  
+  const handleEditDateChange = (field, date) => {
+    setEditFormData({ ...editFormData, [field]: date });
+  };
+  
+  const handleSaveEdit = async (e) => {
+    e.preventDefault();
+    
+    if (!tradeToEdit) return;
+    
+    try {
+      setEditLoading(true);
+      
+      // Convert data types
+      const tradeData = {
+        ...editFormData,
+        volume: parseInt(editFormData.volume),
+        entry_price: parseFloat(editFormData.entry_price),
+        stop_loss: parseFloat(editFormData.stop_loss),
+        target_price: parseFloat(editFormData.target_price),
+        exit_price: parseFloat(editFormData.exit_price),
+        // Convert dates to ISO string format
+        entry_date: editFormData.entry_date.toISOString(),
+        exit_date: editFormData.exit_date.toISOString()
+      };
+      
+      const updatedTrade = await updateTrade(tradeToEdit.id, tradeData);
+      
+      // Update the trades list
+      setTrades(trades.map(trade => 
+        trade.id === tradeToEdit.id ? updatedTrade : trade
+      ));
+      
+      // Close the modal
+      setEditModalOpen(false);
+      setTradeToEdit(null);
+    } catch (err) {
+      console.error('Error updating trade:', err);
+      // You could show an error notification here
+    } finally {
+      setEditLoading(false);
     }
   };
   
@@ -410,6 +497,15 @@ const TradeHistory = () => {
                           <Button
                             variant="outlined"
                             size="small"
+                            color="secondary"
+                            onClick={() => handleEditTrade(trade)}
+                            startIcon={<EditIcon />}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            variant="outlined"
+                            size="small"
                             color="error"
                             onClick={() => handleDeleteConfirm(trade)}
                             startIcon={<DeleteIcon />}
@@ -538,6 +634,152 @@ const TradeHistory = () => {
           </Button>
           <Button onClick={handleDeleteTrade} color="error">
             Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* Edit Trade Modal */}
+      <Dialog
+        open={editModalOpen}
+        onClose={handleCloseEditModal}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          <Typography variant="h5" component="div">
+            Edit Trade
+          </Typography>
+        </DialogTitle>
+        <DialogContent dividers>
+          <Box component="form" onSubmit={handleSaveEdit} noValidate>
+            <Grid container spacing={3}>
+              {/* Basic Trade Information */}
+              <Grid item xs={12} md={6}>
+                <TextField
+                  required
+                  fullWidth
+                  label="Ticker Symbol"
+                  name="ticker"
+                  value={editFormData.ticker}
+                  onChange={handleEditFormChange}
+                  placeholder="AAPL"
+                  inputProps={{ style: { textTransform: 'uppercase' } }}
+                />
+              </Grid>
+              
+              <Grid item xs={12} md={6}>
+                <TextField
+                  select
+                  required
+                  fullWidth
+                  label="Direction"
+                  name="direction"
+                  value={editFormData.direction}
+                  onChange={handleEditFormChange}
+                >
+                  <MenuItem value="Buy">Buy (Long)</MenuItem>
+                  <MenuItem value="Short">Short (Sell)</MenuItem>
+                </TextField>
+              </Grid>
+              
+              <Grid item xs={12} md={6}>
+                <TextField
+                  required
+                  fullWidth
+                  label="Volume (Shares)"
+                  name="volume"
+                  type="number"
+                  value={editFormData.volume}
+                  onChange={handleEditFormChange}
+                  inputProps={{ min: 1 }}
+                />
+              </Grid>
+              
+              {/* Price Information */}
+              <Grid item xs={12} md={6}>
+                <TextField
+                  required
+                  fullWidth
+                  label="Entry Price"
+                  name="entry_price"
+                  type="number"
+                  value={editFormData.entry_price}
+                  onChange={handleEditFormChange}
+                  inputProps={{ step: 0.01, min: 0.01 }}
+                />
+              </Grid>
+              
+              <Grid item xs={12} md={6}>
+                <TextField
+                  required
+                  fullWidth
+                  label="Stop Loss Price"
+                  name="stop_loss"
+                  type="number"
+                  value={editFormData.stop_loss}
+                  onChange={handleEditFormChange}
+                  inputProps={{ step: 0.01, min: 0.01 }}
+                />
+              </Grid>
+              
+              <Grid item xs={12} md={6}>
+                <TextField
+                  required
+                  fullWidth
+                  label="Target Price"
+                  name="target_price"
+                  type="number"
+                  value={editFormData.target_price}
+                  onChange={handleEditFormChange}
+                  inputProps={{ step: 0.01, min: 0.01 }}
+                />
+              </Grid>
+              
+              {/* Date Information */}
+              <Grid item xs={12} md={6}>
+                <DateTimePicker
+                  label="Entry Date & Time (EST)"
+                  value={editFormData.entry_date}
+                  onChange={(date) => handleEditDateChange('entry_date', date)}
+                  slotProps={{ textField: { fullWidth: true, required: true } }}
+                />
+              </Grid>
+              
+              <Grid item xs={12} md={6}>
+                <DateTimePicker
+                  label="Exit Date & Time (EST)"
+                  value={editFormData.exit_date}
+                  onChange={(date) => handleEditDateChange('exit_date', date)}
+                  slotProps={{ textField: { fullWidth: true, required: true } }}
+                />
+              </Grid>
+              
+              <Grid item xs={12}>
+                <TextField
+                  required
+                  fullWidth
+                  label="Exit Price"
+                  name="exit_price"
+                  type="number"
+                  value={editFormData.exit_price}
+                  onChange={handleEditFormChange}
+                  inputProps={{ step: 0.01, min: 0.01 }}
+                />
+              </Grid>
+            </Grid>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseEditModal} color="secondary">
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSaveEdit} 
+            color="primary" 
+            variant="contained"
+            disabled={editLoading}
+          >
+            {editLoading ? 'Saving...' : 'Save Changes'}
           </Button>
         </DialogActions>
       </Dialog>
