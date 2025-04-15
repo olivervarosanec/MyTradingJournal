@@ -20,7 +20,6 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import CardHeader from '@mui/material/CardHeader';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 
 // Currency formatting function for $1,127,500.00 style
 function formatCurrency(value) {
@@ -147,6 +146,13 @@ const TradeEntry = () => {
     }
     profitFactor = risk !== 0 ? targetPL / Math.abs(risk) : null;
   }
+  
+  // Enable Save button only if mandatory fields are filled
+  const isSaveEnabled =
+    formData.ticker.trim() !== '' &&
+    formData.direction.trim() !== '' &&
+    formData.volume !== '' && !isNaN(Number(formData.volume)) && Number(formData.volume) > 0 &&
+    formData.entry_price !== '' && !isNaN(Number(formData.entry_price)) && Number(formData.entry_price) > 0;
   
   return (
     <Container maxWidth="md">
@@ -330,7 +336,7 @@ const TradeEntry = () => {
                   variant="contained"
                   color="primary"
                   startIcon={<SaveIcon />}
-                  disabled={loading}
+                  disabled={loading || !isSaveEnabled}
                 >
                   Save Trade
                 </Button>
