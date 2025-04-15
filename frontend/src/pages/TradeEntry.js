@@ -76,10 +76,19 @@ const TradeEntry = () => {
         direction: formData.direction,
         volume: parseInt(formData.volume),
         entry_price: parseFloat(formData.entry_price),
-        stop_loss: parseFloat(formData.stop_loss),
-        target_price: parseFloat(formData.target_price),
         entry_date: formData.entry_date.toISOString(),
       };
+      
+      // Only add stop_loss if it has a value
+      if (formData.stop_loss !== '' && formData.stop_loss !== null && formData.stop_loss !== undefined) {
+        tradeData.stop_loss = parseFloat(formData.stop_loss);
+      }
+      
+      // Only add target_price if it has a value
+      if (formData.target_price !== '' && formData.target_price !== null && formData.target_price !== undefined) {
+        tradeData.target_price = parseFloat(formData.target_price);
+      }
+      
       if (formData.exit_date) {
         tradeData.exit_date = formData.exit_date.toISOString();
       }
@@ -179,9 +188,8 @@ const TradeEntry = () => {
             
             <Grid item xs={12} md={6}>
               <TextField
-                required
                 fullWidth
-                label="Stop Loss Price"
+                label="Stop Loss Price (optional)"
                 name="stop_loss"
                 type="number"
                 value={formData.stop_loss}
@@ -192,9 +200,8 @@ const TradeEntry = () => {
             
             <Grid item xs={12} md={6}>
               <TextField
-                required
                 fullWidth
-                label="Target Price"
+                label="Target Price (optional)"
                 name="target_price"
                 type="number"
                 value={formData.target_price}

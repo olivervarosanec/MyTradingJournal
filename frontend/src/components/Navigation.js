@@ -11,6 +11,7 @@ import {
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import HistoryIcon from '@mui/icons-material/History';
+import UploadIcon from '@mui/icons-material/Upload';
 
 const Navigation = () => {
   const location = useLocation();
@@ -96,6 +97,24 @@ const Navigation = () => {
               }}
             >
               History
+            </Button>
+            
+            <Button
+              component={RouterLink}
+              to="/import"
+              color={location.pathname === '/import' ? 'secondary' : 'inherit'}
+              startIcon={<UploadIcon />}
+              sx={{
+                fontWeight: 600,
+                fontSize: '1.05rem',
+                px: 2.5,
+                borderRadius: '10px',
+                boxShadow: location.pathname === '/import' ? '0 0 8px 2px #ffd60055' : 'none',
+                background: location.pathname === '/import' ? 'rgba(255,214,0,0.08)' : 'none',
+                transition: 'all 0.2s',
+              }}
+            >
+              Import
             </Button>
           </Box>
         </Toolbar>

@@ -9,6 +9,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import Dashboard from './pages/Dashboard';
 import TradeEntry from './pages/TradeEntry';
 import TradeHistory from './pages/TradeHistory';
+import Import from './pages/Import';
 
 // Components
 import Navigation from './components/Navigation';
@@ -152,6 +153,7 @@ function App() {
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/trade-entry" element={<TradeEntry />} />
                 <Route path="/trade-history" element={<TradeHistory />} />
+                <Route path="/import" element={<Import />} />
               </Routes>
             </main>
           </div>

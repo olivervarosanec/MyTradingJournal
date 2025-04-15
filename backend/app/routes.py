@@ -33,14 +33,14 @@ def create_trade():
     if 'exit_price' in data and data['exit_price'] is not None and data['exit_price'] != '':
         exit_price = float(data['exit_price'])
     
-    # Create new trade
+    # Create new trade with optional fields
     new_trade = Trade(
         ticker=data['ticker'],
         direction=data['direction'],
         volume=int(data['volume']),
         entry_price=float(data['entry_price']),
-        stop_loss=float(data['stop_loss']),
-        target_price=float(data['target_price']),
+        stop_loss=float(data['stop_loss']) if 'stop_loss' in data and data['stop_loss'] is not None and data['stop_loss'] != '' else None,
+        target_price=float(data['target_price']) if 'target_price' in data and data['target_price'] is not None and data['target_price'] != '' else None,
         entry_date=entry_date,
         exit_date=exit_date,
         exit_price=exit_price
@@ -70,8 +70,19 @@ def update_trade(trade_id):
     trade.direction = data['direction']
     trade.volume = int(data['volume'])
     trade.entry_price = float(data['entry_price'])
-    trade.stop_loss = float(data['stop_loss'])
-    trade.target_price = float(data['target_price'])
+    
+    # Handle optional stop_loss
+    if 'stop_loss' in data and data['stop_loss'] is not None and data['stop_loss'] != '':
+        trade.stop_loss = float(data['stop_loss'])
+    else:
+        trade.stop_loss = None
+    
+    # Handle optional target_price
+    if 'target_price' in data and data['target_price'] is not None and data['target_price'] != '':
+        trade.target_price = float(data['target_price'])
+    else:
+        trade.target_price = None
+    
     trade.entry_date = datetime.fromisoformat(data['entry_date'].replace('Z', '+00:00'))
     if 'exit_date' in data and data['exit_date']:
         trade.exit_date = datetime.fromisoformat(data['exit_date'].replace('Z', '+00:00'))
