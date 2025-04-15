@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { useMediaQuery } from '@mui/material';
 import CssBaseline from '@mui/material/CssBaseline';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import Box from '@mui/material/Box';
 
 // Pages
 import Dashboard from './pages/Dashboard';
@@ -141,6 +143,16 @@ const darkTheme = createTheme({
 });
 
 function App() {
+  const isMobile = useMediaQuery(darkTheme.breakpoints.down('sm'));
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  
+  // No automatic toggle based on screen size - sidebar always starts closed
+  // We're removing the useEffect hook that was changing state based on screen size
+
+  const handleSidebarToggle = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
   return (
     <ThemeProvider theme={darkTheme}>
       <LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -149,17 +161,30 @@ function App() {
           v7_startTransition: true,
           v7_relativeSplatPath: true
         }}>
-          <div className="App">
-            <Navigation />
-            <main style={{ padding: '20px', marginTop: '64px' }}>
+          <Box sx={{ display: 'flex' }}>
+            <Navigation isOpen={sidebarOpen} onToggle={handleSidebarToggle} />
+            <Box
+              component="main"
+              sx={{
+                flexGrow: 1,
+                p: { xs: 2, md: 3 },
+                ml: sidebarOpen ? { xs: '60px', sm: '240px' } : '60px',
+                mt: '64px',
+                minHeight: '100vh',
+                transition: (theme) => theme.transitions.create(['margin', 'padding'], {
+                  easing: theme.transitions.easing.sharp,
+                  duration: theme.transitions.duration.enteringScreen,
+                }),
+              }}
+            >
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/trade-entry" element={<TradeEntry />} />
                 <Route path="/trade-history" element={<TradeHistory />} />
                 <Route path="/import" element={<Import />} />
               </Routes>
-            </main>
-          </div>
+            </Box>
+          </Box>
         </Router>
       </LocalizationProvider>
     </ThemeProvider>
