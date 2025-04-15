@@ -26,7 +26,7 @@ const TradeEntry = () => {
     stop_loss: '',
     target_price: '',
     entry_date: new Date(),
-    exit_date: new Date(),
+    exit_date: null,
     exit_price: ''
   });
   
@@ -59,7 +59,7 @@ const TradeEntry = () => {
       stop_loss: '',
       target_price: '',
       entry_date: new Date(),
-      exit_date: new Date(),
+      exit_date: null,
       exit_price: ''
     });
   };
@@ -72,16 +72,20 @@ const TradeEntry = () => {
       
       // Convert data types
       const tradeData = {
-        ...formData,
+        ticker: formData.ticker,
+        direction: formData.direction,
         volume: parseInt(formData.volume),
         entry_price: parseFloat(formData.entry_price),
         stop_loss: parseFloat(formData.stop_loss),
         target_price: parseFloat(formData.target_price),
-        exit_price: parseFloat(formData.exit_price),
-        // Convert dates to ISO string format
         entry_date: formData.entry_date.toISOString(),
-        exit_date: formData.exit_date.toISOString()
       };
+      if (formData.exit_date) {
+        tradeData.exit_date = formData.exit_date.toISOString();
+      }
+      if (formData.exit_price !== '' && formData.exit_price !== null && formData.exit_price !== undefined) {
+        tradeData.exit_price = parseFloat(formData.exit_price);
+      }
       
       await createTrade(tradeData);
       
@@ -211,18 +215,17 @@ const TradeEntry = () => {
             
             <Grid item xs={12} md={6}>
               <DateTimePicker
-                label="Exit Date & Time (EST)"
+                label="Exit Date & Time (EST) (optional)"
                 value={formData.exit_date}
                 onChange={(date) => handleDateChange('exit_date', date)}
-                slotProps={{ textField: { fullWidth: true, required: true } }}
+                slotProps={{ textField: { fullWidth: true } }}
               />
             </Grid>
             
             <Grid item xs={12}>
               <TextField
-                required
                 fullWidth
-                label="Exit Price"
+                label="Exit Price (optional)"
                 name="exit_price"
                 type="number"
                 value={formData.exit_price}

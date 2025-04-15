@@ -82,6 +82,13 @@ const TradeHistory = () => {
     exit_price: ''
   });
   const [editLoading, setEditLoading] = useState(false);
+  const [closeModalOpen, setCloseModalOpen] = useState(false);
+  const [tradeToClose, setTradeToClose] = useState(null);
+  const [closeFormData, setCloseFormData] = useState({
+    exit_date: new Date(),
+    exit_price: ''
+  });
+  const [closeLoading, setCloseLoading] = useState(false);
   
   // Fetch trades data
   useEffect(() => {
@@ -247,13 +254,13 @@ const TradeHistory = () => {
     setEditFormData({
       ticker: trade.ticker,
       direction: trade.direction,
-      volume: trade.volume.toString(),
-      entry_price: trade.entry_price.toString(),
-      stop_loss: trade.stop_loss.toString(),
-      target_price: trade.target_price.toString(),
-      entry_date: new Date(trade.entry_date),
-      exit_date: new Date(trade.exit_date),
-      exit_price: trade.exit_price.toString()
+      volume: trade.volume != null ? trade.volume.toString() : '',
+      entry_price: trade.entry_price != null ? trade.entry_price.toString() : '',
+      stop_loss: trade.stop_loss != null ? trade.stop_loss.toString() : '',
+      target_price: trade.target_price != null ? trade.target_price.toString() : '',
+      entry_date: trade.entry_date ? new Date(trade.entry_date) : new Date(),
+      exit_date: trade.exit_date ? new Date(trade.exit_date) : null,
+      exit_price: trade.exit_price != null ? trade.exit_price.toString() : ''
     });
     setEditModalOpen(true);
   };
@@ -290,7 +297,7 @@ const TradeHistory = () => {
         exit_price: parseFloat(editFormData.exit_price),
         // Convert dates to ISO string format
         entry_date: editFormData.entry_date.toISOString(),
-        exit_date: editFormData.exit_date.toISOString()
+        exit_date: editFormData.exit_date ? editFormData.exit_date.toISOString() : null
       };
       
       const updatedTrade = await updateTrade(tradeToEdit.id, tradeData);
@@ -308,6 +315,50 @@ const TradeHistory = () => {
       // You could show an error notification here
     } finally {
       setEditLoading(false);
+    }
+  };
+  
+  const handleOpenCloseModal = (trade) => {
+    setTradeToClose(trade);
+    setCloseFormData({
+      exit_date: new Date(),
+      exit_price: ''
+    });
+    setCloseModalOpen(true);
+  };
+  
+  const handleCloseCloseModal = () => {
+    setCloseModalOpen(false);
+    setTradeToClose(null);
+  };
+  
+  const handleCloseFormChange = (e) => {
+    const { name, value } = e.target;
+    setCloseFormData({ ...closeFormData, [name]: value });
+  };
+  
+  const handleCloseDateChange = (date) => {
+    setCloseFormData({ ...closeFormData, exit_date: date });
+  };
+  
+  const handleSubmitCloseTrade = async (e) => {
+    e.preventDefault();
+    if (!tradeToClose) return;
+    try {
+      setCloseLoading(true);
+      const tradeData = {
+        ...tradeToClose,
+        exit_date: closeFormData.exit_date.toISOString(),
+        exit_price: parseFloat(closeFormData.exit_price)
+      };
+      const updatedTrade = await updateTrade(tradeToClose.id, tradeData);
+      setTrades(trades.map(trade => trade.id === tradeToClose.id ? updatedTrade : trade));
+      setCloseModalOpen(false);
+      setTradeToClose(null);
+    } catch (err) {
+      console.error('Error closing trade:', err);
+    } finally {
+      setCloseLoading(false);
     }
   };
   
@@ -470,18 +521,22 @@ const TradeHistory = () => {
                         {format(new Date(trade.entry_date), 'MMM dd, yyyy HH:mm')}
                       </TableCell>
                       <TableCell>
-                        {format(new Date(trade.exit_date), 'MMM dd, yyyy HH:mm')}
+                        {trade.exit_date ? format(new Date(trade.exit_date), 'MMM dd, yyyy HH:mm') : <Chip label="Open" color="warning" size="small" />}
                       </TableCell>
                       <TableCell>
-                        <Typography
-                          color={trade.profit_loss > 0 ? 'success.main' : 'error.main'}
-                          fontWeight="bold"
-                        >
-                          ${trade.profit_loss.toFixed(2)}
-                        </Typography>
+                        {trade.profit_loss !== null && trade.profit_loss !== undefined ? (
+                          <Typography
+                            color={trade.profit_loss > 0 ? 'success.main' : 'error.main'}
+                            fontWeight="bold"
+                          >
+                            ${trade.profit_loss.toFixed(2)}
+                          </Typography>
+                        ) : (
+                          <Chip label="Open" color="warning" size="small" />
+                        )}
                       </TableCell>
                       <TableCell>
-                        {trade.days_held.toFixed(1)}
+                        {trade.days_held !== null && trade.days_held !== undefined ? trade.days_held.toFixed(1) : <Chip label="-" size="small" />}
                       </TableCell>
                       <TableCell align="center">
                         <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
@@ -512,6 +567,17 @@ const TradeHistory = () => {
                           >
                             Delete
                           </Button>
+                          {(!trade.exit_date || trade.exit_price === null || trade.exit_price === undefined) && (
+                            <Button
+                              variant="contained"
+                              size="small"
+                              color="success"
+                              onClick={() => handleOpenCloseModal(trade)}
+                              sx={{ fontWeight: 600 }}
+                            >
+                              Close
+                            </Button>
+                          )}
                         </Box>
                       </TableCell>
                     </TableRow>
@@ -780,6 +846,55 @@ const TradeHistory = () => {
             disabled={editLoading}
           >
             {editLoading ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* Close Trade Modal */}
+      <Dialog
+        open={closeModalOpen}
+        onClose={handleCloseCloseModal}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Close Trade</DialogTitle>
+        <DialogContent dividers>
+          <Box component="form" onSubmit={handleSubmitCloseTrade} noValidate>
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <DateTimePicker
+                  label="Exit Date & Time (EST)"
+                  value={closeFormData.exit_date}
+                  onChange={handleCloseDateChange}
+                  slotProps={{ textField: { fullWidth: true, required: true } }}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  required
+                  fullWidth
+                  label="Exit Price"
+                  name="exit_price"
+                  type="number"
+                  value={closeFormData.exit_price}
+                  onChange={handleCloseFormChange}
+                  inputProps={{ step: 0.01, min: 0.01 }}
+                />
+              </Grid>
+            </Grid>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseCloseModal} color="secondary">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmitCloseTrade}
+            color="primary"
+            variant="contained"
+            disabled={closeLoading}
+          >
+            {closeLoading ? 'Saving...' : 'Close Trade'}
           </Button>
         </DialogActions>
       </Dialog>
