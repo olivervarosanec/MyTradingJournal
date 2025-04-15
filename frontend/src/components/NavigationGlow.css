@@ -1,0 +1,40 @@
+/* Stunning glowing effect for sidebar icons */
+.glow-icon {
+  position: relative;
+  z-index: 1;
+  transition: filter 0.25s, box-shadow 0.25s;
+}
+
+.glow-icon:hover svg, .glow-icon:focus svg {
+  filter: drop-shadow(0 0 8px #00eaff) drop-shadow(0 0 16px #00ffd0) drop-shadow(0 0 32px #00ffd0);
+  color: #00ffd0 !important;
+  transition: filter 0.25s, color 0.25s;
+}
+
+/* Active icon glow (for selected route) */
+.glow-icon .MuiSvgIcon-root {
+  transition: filter 0.25s, color 0.25s;
+}
+
+/* Seamless border blending for AppBar and Drawer */
+.seamless-appbar {
+  box-shadow: none !important;
+  border-bottom: none !important;
+  background: linear-gradient(180deg, rgba(24,28,36,0.98) 80%, rgba(24,28,36,0.85) 100%) !important;
+}
+
+.seamless-drawer .MuiDrawer-paper {
+  border-right: none !important;
+  background: linear-gradient(90deg, rgba(24,28,36,0.98) 90%, rgba(24,28,36,0.85) 100%) !important;
+  box-shadow: 4px 0 32px 0 rgba(0,0,0,0.18);
+}
+
+/* Remove ListItem background on hover except for icon glow */
+.MuiListItem-root:hover {
+  background: transparent !important;
+}
+
+/* Make the ListItemText blend smoothly if needed */
+.MuiListItemText-root {
+  transition: color 0.25s;
+} 

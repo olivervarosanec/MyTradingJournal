@@ -26,28 +26,34 @@ def create_trade():
     
     # Parse dates from ISO format
     entry_date = datetime.fromisoformat(data['entry_date'].replace('Z', '+00:00'))
-    exit_date = datetime.fromisoformat(data['exit_date'].replace('Z', '+00:00'))
+    exit_date = None
+    exit_price = None
+    if 'exit_date' in data and data['exit_date']:
+        exit_date = datetime.fromisoformat(data['exit_date'].replace('Z', '+00:00'))
+    if 'exit_price' in data and data['exit_price'] is not None and data['exit_price'] != '':
+        exit_price = float(data['exit_price'])
     
-    # Create new trade
+    # Create new trade with optional fields
     new_trade = Trade(
         ticker=data['ticker'],
         direction=data['direction'],
         volume=int(data['volume']),
         entry_price=float(data['entry_price']),
-        stop_loss=float(data['stop_loss']),
-        target_price=float(data['target_price']),
+        stop_loss=float(data['stop_loss']) if 'stop_loss' in data and data['stop_loss'] is not None and data['stop_loss'] != '' else None,
+        target_price=float(data['target_price']) if 'target_price' in data and data['target_price'] is not None and data['target_price'] != '' else None,
         entry_date=entry_date,
         exit_date=exit_date,
-        exit_price=float(data['exit_price'])
+        exit_price=exit_price
     )
     
     # Calculate cumulative equity
     last_trade = Trade.query.order_by(Trade.id.desc()).first()
     if last_trade:
-        new_trade.cumulative_equity = last_trade.cumulative_equity + new_trade.profit_loss
+        last_equity = last_trade.cumulative_equity if last_trade.cumulative_equity is not None else 0
+        profit_loss = new_trade.profit_loss if new_trade.profit_loss is not None else 0
+        new_trade.cumulative_equity = last_equity + profit_loss
     else:
-        # First trade starts with profit/loss
-        new_trade.cumulative_equity = new_trade.profit_loss
+        new_trade.cumulative_equity = new_trade.profit_loss if new_trade.profit_loss is not None else 0
     
     db.session.add(new_trade)
     db.session.commit()
@@ -64,11 +70,28 @@ def update_trade(trade_id):
     trade.direction = data['direction']
     trade.volume = int(data['volume'])
     trade.entry_price = float(data['entry_price'])
-    trade.stop_loss = float(data['stop_loss'])
-    trade.target_price = float(data['target_price'])
+    
+    # Handle optional stop_loss
+    if 'stop_loss' in data and data['stop_loss'] is not None and data['stop_loss'] != '':
+        trade.stop_loss = float(data['stop_loss'])
+    else:
+        trade.stop_loss = None
+    
+    # Handle optional target_price
+    if 'target_price' in data and data['target_price'] is not None and data['target_price'] != '':
+        trade.target_price = float(data['target_price'])
+    else:
+        trade.target_price = None
+    
     trade.entry_date = datetime.fromisoformat(data['entry_date'].replace('Z', '+00:00'))
-    trade.exit_date = datetime.fromisoformat(data['exit_date'].replace('Z', '+00:00'))
-    trade.exit_price = float(data['exit_price'])
+    if 'exit_date' in data and data['exit_date']:
+        trade.exit_date = datetime.fromisoformat(data['exit_date'].replace('Z', '+00:00'))
+    else:
+        trade.exit_date = None
+    if 'exit_price' in data and data['exit_price'] is not None and data['exit_price'] != '':
+        trade.exit_price = float(data['exit_price'])
+    else:
+        trade.exit_price = None
     
     # Recalculate metrics
     trade.calculate_metrics()
@@ -79,14 +102,17 @@ def update_trade(trade_id):
     # Get previous cumulative equity
     prev_trade = Trade.query.filter(Trade.id < trade.id).order_by(Trade.id.desc()).first()
     if prev_trade:
-        trade.cumulative_equity = prev_trade.cumulative_equity + trade.profit_loss
+        prev_equity = prev_trade.cumulative_equity if prev_trade.cumulative_equity is not None else 0
+        profit_loss = trade.profit_loss if trade.profit_loss is not None else 0
+        trade.cumulative_equity = prev_equity + profit_loss
     else:
-        trade.cumulative_equity = trade.profit_loss
+        trade.cumulative_equity = trade.profit_loss if trade.profit_loss is not None else 0
         
     # Update subsequent trades
     current_equity = trade.cumulative_equity
     for t in trades_after:
-        current_equity += t.profit_loss
+        profit_loss = t.profit_loss if t.profit_loss is not None else 0
+        current_equity += profit_loss
         t.cumulative_equity = current_equity
     
     db.session.commit()
@@ -122,7 +148,10 @@ def delete_trade(trade_id):
 def get_stats():
     trades = Trade.query.all()
     
-    if not trades:
+    # Only closed trades (with profit_loss not None) are considered for stats
+    closed_trades = [trade for trade in trades if trade.profit_loss is not None]
+
+    if not closed_trades:
         return jsonify({
             "total_trades": 0,
             "win_rate": 0,
@@ -136,25 +165,23 @@ def get_stats():
             "worst_trade": None
         })
     
-    # Calculate statistics
-    total_trades = len(trades)
-    profitable_trades = sum(1 for trade in trades if trade.profit_loss > 0)
+    total_trades = len(closed_trades)
+    profitable_trades = sum(1 for trade in closed_trades if trade.profit_loss > 0)
     win_rate = profitable_trades / total_trades if total_trades > 0 else 0
     
-    avg_profit_loss = sum(trade.profit_loss for trade in trades) / total_trades if total_trades > 0 else 0
-    avg_risk_reward = sum(trade.risk_reward for trade in trades) / total_trades if total_trades > 0 else 0
+    avg_profit_loss = sum(trade.profit_loss for trade in closed_trades) / total_trades if total_trades > 0 else 0
+    avg_risk_reward = sum(trade.risk_reward for trade in closed_trades if trade.risk_reward is not None) / total_trades if total_trades > 0 else 0
     
     # Calculate drawdown
     equity_values = []
     current_equity = 0
-    for trade in trades:
+    for trade in closed_trades:
         current_equity += trade.profit_loss
         equity_values.append(current_equity)
     
     # Calculate max drawdown
     max_drawdown = 0
     peak = 0
-    
     for equity in equity_values:
         if equity > peak:
             peak = equity
@@ -162,22 +189,23 @@ def get_stats():
         if drawdown > max_drawdown:
             max_drawdown = drawdown
     
-    total_profit_loss = sum(trade.profit_loss for trade in trades)
-    avg_holding_period = sum(trade.days_held for trade in trades) / total_trades if total_trades > 0 else 0
+    total_profit_loss = sum(trade.profit_loss for trade in closed_trades)
+    avg_holding_period = sum(trade.days_held for trade in closed_trades if trade.days_held is not None) / total_trades if total_trades > 0 else 0
     
     # Monthly performance
     monthly_perf = {}
-    for trade in trades:
-        month_key = trade.exit_date.strftime('%Y-%m')
-        if month_key not in monthly_perf:
-            monthly_perf[month_key] = 0
-        monthly_perf[month_key] += trade.profit_loss
+    for trade in closed_trades:
+        if trade.exit_date:
+            month_key = trade.exit_date.strftime('%Y-%m')
+            if month_key not in monthly_perf:
+                monthly_perf[month_key] = 0
+            monthly_perf[month_key] += trade.profit_loss
     
     monthly_performance = [{"month": k, "profit_loss": v} for k, v in monthly_perf.items()]
     
     # Best and worst trades
-    best_trade = max(trades, key=lambda x: x.profit_loss)
-    worst_trade = min(trades, key=lambda x: x.profit_loss)
+    best_trade = max(closed_trades, key=lambda x: x.profit_loss) if closed_trades else None
+    worst_trade = min(closed_trades, key=lambda x: x.profit_loss) if closed_trades else None
     
     return jsonify({
         "total_trades": total_trades,
@@ -188,8 +216,8 @@ def get_stats():
         "total_profit_loss": total_profit_loss,
         "avg_holding_period": avg_holding_period,
         "monthly_performance": monthly_performance,
-        "best_trade": best_trade.to_dict(),
-        "worst_trade": worst_trade.to_dict()
+        "best_trade": best_trade.to_dict() if best_trade else None,
+        "worst_trade": worst_trade.to_dict() if worst_trade else None
     })
 
 @main_bp.route('/api/charts/<string:ticker>', methods=['GET'])

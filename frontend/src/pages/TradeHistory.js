@@ -22,7 +22,9 @@ import {
   TextField,
   Grid,
   MenuItem,
-  Divider
+  Divider,
+  Snackbar,
+  Alert
 } from '@mui/material';
 import { fetchTrades, fetchChartData, deleteTrade, updateTrade } from '../services/api';
 import { format } from 'date-fns';
@@ -71,32 +73,54 @@ const TradeHistory = () => {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [tradeToEdit, setTradeToEdit] = useState(null);
   const [editFormData, setEditFormData] = useState({
+    id: '',
     ticker: '',
     direction: 'Buy',
     volume: '',
     entry_price: '',
     stop_loss: '',
     target_price: '',
-    entry_date: new Date(),
-    exit_date: new Date(),
+    entry_date: null,
+    exit_date: null,
     exit_price: ''
   });
   const [editLoading, setEditLoading] = useState(false);
+  const [closeModalOpen, setCloseModalOpen] = useState(false);
+  const [tradeToClose, setTradeToClose] = useState(null);
+  const [closeFormData, setCloseFormData] = useState({
+    exit_date: new Date(),
+    exit_price: ''
+  });
+  const [closeLoading, setCloseLoading] = useState(false);
+  const [notification, setNotification] = useState({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
+  
+  // Handle closing notifications
+  const handleCloseNotification = () => {
+    setNotification({
+      ...notification,
+      open: false
+    });
+  };
+  
+  // Load trades function
+  const loadTrades = async () => {
+    try {
+      setLoading(true);
+      const data = await fetchTrades();
+      setTrades(data);
+    } catch (err) {
+      setError('Failed to load trades: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
   
   // Fetch trades data
   useEffect(() => {
-    const loadTrades = async () => {
-      try {
-        setLoading(true);
-        const data = await fetchTrades();
-        setTrades(data);
-      } catch (err) {
-        setError('Failed to load trades: ' + err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
     loadTrades();
   }, []);
   
@@ -243,17 +267,17 @@ const TradeHistory = () => {
   };
   
   const handleEditTrade = (trade) => {
-    setTradeToEdit(trade);
     setEditFormData({
+      id: trade.id,
       ticker: trade.ticker,
       direction: trade.direction,
       volume: trade.volume.toString(),
-      entry_price: trade.entry_price.toString(),
-      stop_loss: trade.stop_loss.toString(),
-      target_price: trade.target_price.toString(),
-      entry_date: new Date(trade.entry_date),
-      exit_date: new Date(trade.exit_date),
-      exit_price: trade.exit_price.toString()
+      entry_price: trade.entry_price !== null ? trade.entry_price.toString() : '',
+      stop_loss: trade.stop_loss !== null ? trade.stop_loss.toString() : '',
+      target_price: trade.target_price !== null ? trade.target_price.toString() : '',
+      entry_date: trade.entry_date ? new Date(trade.entry_date) : null,
+      exit_date: trade.exit_date ? new Date(trade.exit_date) : null,
+      exit_price: trade.exit_price !== null ? trade.exit_price.toString() : ''
     });
     setEditModalOpen(true);
   };
@@ -275,39 +299,83 @@ const TradeHistory = () => {
   const handleSaveEdit = async (e) => {
     e.preventDefault();
     
-    if (!tradeToEdit) return;
-    
+    setLoading(true);
     try {
-      setEditLoading(true);
-      
-      // Convert data types
-      const tradeData = {
+      // Convert data for API
+      const updatedTrade = {
         ...editFormData,
         volume: parseInt(editFormData.volume),
         entry_price: parseFloat(editFormData.entry_price),
-        stop_loss: parseFloat(editFormData.stop_loss),
-        target_price: parseFloat(editFormData.target_price),
-        exit_price: parseFloat(editFormData.exit_price),
-        // Convert dates to ISO string format
+        stop_loss: editFormData.stop_loss !== '' ? parseFloat(editFormData.stop_loss) : null,
+        target_price: editFormData.target_price !== '' ? parseFloat(editFormData.target_price) : null,
+        exit_price: editFormData.exit_price !== '' ? parseFloat(editFormData.exit_price) : null,
         entry_date: editFormData.entry_date.toISOString(),
-        exit_date: editFormData.exit_date.toISOString()
+        exit_date: editFormData.exit_date ? editFormData.exit_date.toISOString() : null
       };
       
-      const updatedTrade = await updateTrade(tradeToEdit.id, tradeData);
+      await updateTrade(editFormData.id, updatedTrade);
       
-      // Update the trades list
-      setTrades(trades.map(trade => 
-        trade.id === tradeToEdit.id ? updatedTrade : trade
-      ));
-      
-      // Close the modal
+      // Refresh trades list and close modal
+      await loadTrades();
       setEditModalOpen(false);
-      setTradeToEdit(null);
-    } catch (err) {
-      console.error('Error updating trade:', err);
-      // You could show an error notification here
+      setNotification({
+        open: true,
+        message: 'Trade updated successfully',
+        severity: 'success'
+      });
+    } catch (error) {
+      console.error('Error updating trade:', error);
+      setNotification({
+        open: true,
+        message: `Error updating trade: ${error.message}`,
+        severity: 'error'
+      });
     } finally {
-      setEditLoading(false);
+      setLoading(false);
+    }
+  };
+  
+  const handleOpenCloseModal = (trade) => {
+    setTradeToClose(trade);
+    setCloseFormData({
+      exit_date: new Date(),
+      exit_price: ''
+    });
+    setCloseModalOpen(true);
+  };
+  
+  const handleCloseCloseModal = () => {
+    setCloseModalOpen(false);
+    setTradeToClose(null);
+  };
+  
+  const handleCloseFormChange = (e) => {
+    const { name, value } = e.target;
+    setCloseFormData({ ...closeFormData, [name]: value });
+  };
+  
+  const handleCloseDateChange = (date) => {
+    setCloseFormData({ ...closeFormData, exit_date: date });
+  };
+  
+  const handleSubmitCloseTrade = async (e) => {
+    e.preventDefault();
+    if (!tradeToClose) return;
+    try {
+      setCloseLoading(true);
+      const tradeData = {
+        ...tradeToClose,
+        exit_date: closeFormData.exit_date.toISOString(),
+        exit_price: parseFloat(closeFormData.exit_price)
+      };
+      const updatedTrade = await updateTrade(tradeToClose.id, tradeData);
+      setTrades(trades.map(trade => trade.id === tradeToClose.id ? updatedTrade : trade));
+      setCloseModalOpen(false);
+      setTradeToClose(null);
+    } catch (err) {
+      console.error('Error closing trade:', err);
+    } finally {
+      setCloseLoading(false);
     }
   };
   
@@ -351,7 +419,7 @@ const TradeHistory = () => {
   };
   
   return (
-    <Container maxWidth="lg">
+    <Container maxWidth="xl">
       <Paper elevation={3} sx={{ p: 3, mt: 2 }}>
         <Typography variant="h4" component="h1" gutterBottom color="primary">
           Trade History
@@ -381,7 +449,7 @@ const TradeHistory = () => {
           <Typography color="error" align="center">{error}</Typography>
         ) : (
           <TableContainer>
-            <Table>
+            <Table sx={{ minWidth: 1200 }}>
               <TableHead>
                 <TableRow>
                   <TableCell>
@@ -422,11 +490,38 @@ const TradeHistory = () => {
                   </TableCell>
                   <TableCell>
                     <TableSortLabel
+                      active={orderBy === 'profit_factor'}
+                      direction={orderBy === 'profit_factor' ? order : 'asc'}
+                      onClick={() => handleRequestSort('profit_factor')}
+                    >
+                      Profit Factor
+                    </TableSortLabel>
+                  </TableCell>
+                  <TableCell>
+                    <TableSortLabel
+                      active={orderBy === 'risk_dollars'}
+                      direction={orderBy === 'risk_dollars' ? order : 'asc'}
+                      onClick={() => handleRequestSort('risk_dollars')}
+                    >
+                      Risk ($)
+                    </TableSortLabel>
+                  </TableCell>
+                  <TableCell>
+                    <TableSortLabel
+                      active={orderBy === 'profit_dollars'}
+                      direction={orderBy === 'profit_dollars' ? order : 'asc'}
+                      onClick={() => handleRequestSort('profit_dollars')}
+                    >
+                      Target P/L ($)
+                    </TableSortLabel>
+                  </TableCell>
+                  <TableCell>
+                    <TableSortLabel
                       active={orderBy === 'profit_loss'}
                       direction={orderBy === 'profit_loss' ? order : 'asc'}
                       onClick={() => handleRequestSort('profit_loss')}
                     >
-                      P/L
+                      P/L ($)
                     </TableSortLabel>
                   </TableCell>
                   <TableCell>
@@ -444,7 +539,7 @@ const TradeHistory = () => {
               <TableBody>
                 {filteredTrades.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} align="center">
+                    <TableCell colSpan={10} align="center">
                       No trades found
                     </TableCell>
                   </TableRow>
@@ -470,18 +565,49 @@ const TradeHistory = () => {
                         {format(new Date(trade.entry_date), 'MMM dd, yyyy HH:mm')}
                       </TableCell>
                       <TableCell>
-                        {format(new Date(trade.exit_date), 'MMM dd, yyyy HH:mm')}
+                        {trade.exit_date ? format(new Date(trade.exit_date), 'MMM dd, yyyy HH:mm') : <Chip label="Open" color="warning" size="small" />}
                       </TableCell>
                       <TableCell>
-                        <Typography
-                          color={trade.profit_loss > 0 ? 'success.main' : 'error.main'}
-                          fontWeight="bold"
-                        >
-                          ${trade.profit_loss.toFixed(2)}
-                        </Typography>
+                        {trade.profit_factor !== null ? (
+                          <Typography>
+                            {trade.profit_factor.toFixed(2)}
+                          </Typography>
+                        ) : (
+                          <Chip label="-" size="small" />
+                        )}
                       </TableCell>
                       <TableCell>
-                        {trade.days_held.toFixed(1)}
+                        {trade.risk_dollars !== null ? (
+                          <Typography>
+                            ${trade.risk_dollars.toFixed(2)}
+                          </Typography>
+                        ) : (
+                          <Chip label="-" size="small" />
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {trade.target_price !== null && trade.entry_price !== null && trade.volume !== null ? (
+                          <Typography>
+                            ${(Math.abs(trade.target_price - trade.entry_price) * trade.volume).toFixed(2)}
+                          </Typography>
+                        ) : (
+                          <Chip label="-" size="small" />
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {trade.profit_loss !== null && trade.profit_loss !== undefined ? (
+                          <Typography
+                            color={trade.profit_loss > 0 ? 'success.main' : 'error.main'}
+                            fontWeight="bold"
+                          >
+                            ${trade.profit_loss.toFixed(2)}
+                          </Typography>
+                        ) : (
+                          <Chip label="Open" color="warning" size="small" />
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {trade.days_held !== null && trade.days_held !== undefined ? trade.days_held.toFixed(1) : <Chip label="-" size="small" />}
                       </TableCell>
                       <TableCell align="center">
                         <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
@@ -512,6 +638,17 @@ const TradeHistory = () => {
                           >
                             Delete
                           </Button>
+                          {(!trade.exit_date || trade.exit_price === null || trade.exit_price === undefined) && (
+                            <Button
+                              variant="contained"
+                              size="small"
+                              color="success"
+                              onClick={() => handleOpenCloseModal(trade)}
+                              sx={{ fontWeight: 600 }}
+                            >
+                              Close
+                            </Button>
+                          )}
                         </Box>
                       </TableCell>
                     </TableRow>
@@ -552,28 +689,70 @@ const TradeHistory = () => {
                     <Typography variant="body1">${selectedTrade.entry_price.toFixed(2)}</Typography>
                     
                     <Typography variant="body2" color="text.secondary">Exit Price:</Typography>
-                    <Typography variant="body1">${selectedTrade.exit_price.toFixed(2)}</Typography>
+                    <Typography variant="body1">
+                      {selectedTrade.exit_price !== null ? 
+                        `$${selectedTrade.exit_price.toFixed(2)}` : 
+                        '-'}
+                    </Typography>
                     
                     <Typography variant="body2" color="text.secondary">Stop Loss:</Typography>
-                    <Typography variant="body1">${selectedTrade.stop_loss.toFixed(2)}</Typography>
+                    <Typography variant="body1">
+                      {selectedTrade.stop_loss !== null ? 
+                        `$${selectedTrade.stop_loss.toFixed(2)}` : 
+                        '-'}
+                    </Typography>
                     
                     <Typography variant="body2" color="text.secondary">Target Price:</Typography>
-                    <Typography variant="body1">${selectedTrade.target_price.toFixed(2)}</Typography>
+                    <Typography variant="body1">
+                      {selectedTrade.target_price !== null ? 
+                        `$${selectedTrade.target_price.toFixed(2)}` : 
+                        '-'}
+                    </Typography>
                     
                     <Typography variant="body2" color="text.secondary">Entry Date:</Typography>
                     <Typography variant="body1">{format(new Date(selectedTrade.entry_date), 'MMM dd, yyyy HH:mm')}</Typography>
                     
                     <Typography variant="body2" color="text.secondary">Exit Date:</Typography>
-                    <Typography variant="body1">{format(new Date(selectedTrade.exit_date), 'MMM dd, yyyy HH:mm')}</Typography>
+                    <Typography variant="body1">
+                      {selectedTrade.exit_date ? 
+                        format(new Date(selectedTrade.exit_date), 'MMM dd, yyyy HH:mm') : 
+                        '-'}
+                    </Typography>
                     
                     <Typography variant="body2" color="text.secondary">Days Held:</Typography>
-                    <Typography variant="body1">{selectedTrade.days_held.toFixed(1)} days</Typography>
+                    <Typography variant="body1">
+                      {selectedTrade.days_held !== null ? 
+                        `${selectedTrade.days_held.toFixed(1)} days` : 
+                        '-'}
+                    </Typography>
                     
                     <Typography variant="body2" color="text.secondary">R:R Ratio:</Typography>
-                    <Typography variant="body1">{selectedTrade.risk_reward.toFixed(2)}</Typography>
+                    <Typography variant="body1">
+                      {selectedTrade.risk_reward !== null ? 
+                        selectedTrade.risk_reward.toFixed(2) : 
+                        '-'}
+                    </Typography>
+                    
+                    <Typography variant="body2" color="text.secondary">Profit Factor:</Typography>
+                    <Typography variant="body1">
+                      {selectedTrade.profit_factor !== null ? 
+                        selectedTrade.profit_factor.toFixed(2) : 
+                        '-'}
+                    </Typography>
                     
                     <Typography variant="body2" color="text.secondary">Risk ($):</Typography>
-                    <Typography variant="body1">${selectedTrade.risk_dollars.toFixed(2)}</Typography>
+                    <Typography variant="body1">
+                      {selectedTrade.risk_dollars !== null ? 
+                        `$${selectedTrade.risk_dollars.toFixed(2)}` : 
+                        '-'}
+                    </Typography>
+                    
+                    <Typography variant="body2" color="text.secondary">Target P/L ($):</Typography>
+                    <Typography variant="body1">
+                      {selectedTrade.target_price !== null && selectedTrade.entry_price !== null ? 
+                        `$${(Math.abs(selectedTrade.target_price - selectedTrade.entry_price) * selectedTrade.volume).toFixed(2)}` : 
+                        '-'}
+                    </Typography>
                     
                     <Typography variant="body2" color="text.secondary">P/L:</Typography>
                     <Typography 
@@ -581,7 +760,9 @@ const TradeHistory = () => {
                       color={selectedTrade.profit_loss > 0 ? 'success.main' : 'error.main'}
                       fontWeight="bold"
                     >
-                      ${selectedTrade.profit_loss.toFixed(2)}
+                      {selectedTrade.profit_loss !== null ? 
+                        `$${selectedTrade.profit_loss.toFixed(2)}` : 
+                        '-'}
                     </Typography>
                   </Box>
                 </Grid>
@@ -711,9 +892,8 @@ const TradeHistory = () => {
               
               <Grid item xs={12} md={6}>
                 <TextField
-                  required
                   fullWidth
-                  label="Stop Loss Price"
+                  label="Stop Loss Price (optional)"
                   name="stop_loss"
                   type="number"
                   value={editFormData.stop_loss}
@@ -724,9 +904,8 @@ const TradeHistory = () => {
               
               <Grid item xs={12} md={6}>
                 <TextField
-                  required
                   fullWidth
-                  label="Target Price"
+                  label="Target Price (optional)"
                   name="target_price"
                   type="number"
                   value={editFormData.target_price}
@@ -747,18 +926,17 @@ const TradeHistory = () => {
               
               <Grid item xs={12} md={6}>
                 <DateTimePicker
-                  label="Exit Date & Time (EST)"
+                  label="Exit Date & Time (EST) (optional)"
                   value={editFormData.exit_date}
                   onChange={(date) => handleEditDateChange('exit_date', date)}
-                  slotProps={{ textField: { fullWidth: true, required: true } }}
+                  slotProps={{ textField: { fullWidth: true } }}
                 />
               </Grid>
               
               <Grid item xs={12}>
                 <TextField
-                  required
                   fullWidth
-                  label="Exit Price"
+                  label="Exit Price (optional)"
                   name="exit_price"
                   type="number"
                   value={editFormData.exit_price}
@@ -783,6 +961,71 @@ const TradeHistory = () => {
           </Button>
         </DialogActions>
       </Dialog>
+      
+      {/* Close Trade Modal */}
+      <Dialog
+        open={closeModalOpen}
+        onClose={handleCloseCloseModal}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Close Trade</DialogTitle>
+        <DialogContent dividers>
+          <Box component="form" onSubmit={handleSubmitCloseTrade} noValidate>
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <DateTimePicker
+                  label="Exit Date & Time (EST)"
+                  value={closeFormData.exit_date}
+                  onChange={handleCloseDateChange}
+                  slotProps={{ textField: { fullWidth: true, required: true } }}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  required
+                  fullWidth
+                  label="Exit Price"
+                  name="exit_price"
+                  type="number"
+                  value={closeFormData.exit_price}
+                  onChange={handleCloseFormChange}
+                  inputProps={{ step: 0.01, min: 0.01 }}
+                />
+              </Grid>
+            </Grid>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseCloseModal} color="secondary">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmitCloseTrade}
+            color="primary"
+            variant="contained"
+            disabled={closeLoading}
+          >
+            {closeLoading ? 'Saving...' : 'Close Trade'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* Notification Snackbar */}
+      <Snackbar
+        open={notification.open}
+        autoHideDuration={6000}
+        onClose={handleCloseNotification}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={handleCloseNotification} 
+          severity={notification.severity}
+          sx={{ width: '100%' }}
+        >
+          {notification.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };

@@ -1,0 +1,57 @@
+/* Global dark mode background gradient */
+body {
+  background: linear-gradient(135deg, #181c24 0%, #232a34 100%) fixed;
+  color: #e3e6eb;
+  font-family: 'Inter', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+  min-height: 100vh;
+  letter-spacing: 0.01em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Glassmorphism effect for cards and papers */
+.MuiPaper-root, .MuiCard-root {
+  background: rgba(30,34,44,0.85) !important;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 8px 32px 0 rgba(0,0,0,0.25);
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.04);
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 10px;
+  background: rgba(24,28,36,0.7);
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #232a34 0%, #181c24 100%);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #00bcd4;
+}
+
+/* Smooth transitions for theme changes and hover effects */
+* {
+  transition: background 0.3s, color 0.3s, box-shadow 0.3s, border 0.3s;
+}
+
+/* Button hover effect */
+.MuiButton-root:hover {
+  box-shadow: 0 0 12px 2px #00bcd455;
+  background: rgba(0,188,212,0.08);
+}
+
+/* Card hover effect */
+.MuiCard-root:hover {
+  box-shadow: 0 8px 40px 0 #00bcd455;
+  border: 1.5px solid #00bcd4;
+}
+
+/* Responsive container padding */
+@media (max-width: 600px) {
+  .MuiContainer-root {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+} 

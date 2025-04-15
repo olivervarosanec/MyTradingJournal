@@ -35,7 +35,7 @@ import { fetchStats, fetchTrades } from '../services/api';
 import { format } from 'date-fns';
 
 // Chart colors
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#9146FF', '#FF5656'];
+const COLORS = ['#00bcd4', '#ffd600', '#26d782', '#ff5370', '#42a5f5', '#7e57c2'];
 
 const Dashboard = () => {
   const [stats, setStats] = useState(null);
@@ -125,9 +125,9 @@ const Dashboard = () => {
       ) : (
         <>
           {/* Summary Stats */}
-          <Grid container spacing={3} sx={{ mb: 4, mt: 1 }}>
+          <Grid container spacing={4} sx={{ mb: 5, mt: 2 }}>
             <Grid item xs={12} md={3}>
-              <Card elevation={3}>
+              <Card elevation={6} sx={{ p: 2, border: '1.5px solid #232a34', boxShadow: '0 4px 24px 0 #00bcd455', background: 'rgba(36,40,50,0.92)' }}>
                 <CardContent>
                   <Typography color="text.secondary" gutterBottom>
                     Total Trades
@@ -140,7 +140,7 @@ const Dashboard = () => {
             </Grid>
             
             <Grid item xs={12} md={3}>
-              <Card elevation={3}>
+              <Card elevation={6} sx={{ p: 2, border: '1.5px solid #232a34', boxShadow: '0 4px 24px 0 #00bcd455', background: 'rgba(36,40,50,0.92)' }}>
                 <CardContent>
                   <Typography color="text.secondary" gutterBottom>
                     Win Rate
@@ -157,7 +157,7 @@ const Dashboard = () => {
             </Grid>
             
             <Grid item xs={12} md={3}>
-              <Card elevation={3}>
+              <Card elevation={6} sx={{ p: 2, border: '1.5px solid #232a34', boxShadow: '0 4px 24px 0 #00bcd455', background: 'rgba(36,40,50,0.92)' }}>
                 <CardContent>
                   <Typography color="text.secondary" gutterBottom>
                     Total P/L
@@ -174,7 +174,7 @@ const Dashboard = () => {
             </Grid>
             
             <Grid item xs={12} md={3}>
-              <Card elevation={3}>
+              <Card elevation={6} sx={{ p: 2, border: '1.5px solid #232a34', boxShadow: '0 4px 24px 0 #00bcd455', background: 'rgba(36,40,50,0.92)' }}>
                 <CardContent>
                   <Typography color="text.secondary" gutterBottom>
                     Avg. Risk/Reward
@@ -188,7 +188,7 @@ const Dashboard = () => {
           </Grid>
           
           {/* Equity Curve */}
-          <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
+          <Paper elevation={6} sx={{ p: 4, mb: 5, border: '1.5px solid #232a34', background: 'rgba(30,34,44,0.85)' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
               <TimelineIcon color="primary" sx={{ mr: 1 }} />
               <Typography variant="h5" component="h2">
@@ -204,27 +204,18 @@ const Dashboard = () => {
                 }))}
                 margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                <XAxis dataKey="date" stroke="rgba(255,255,255,0.7)" />
-                <YAxis stroke="rgba(255,255,255,0.7)" />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#1e1e1e', borderColor: '#333' }}
-                  formatter={(value) => [`$${value.toFixed(2)}`, 'Equity']}
-                />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
+                <XAxis dataKey="date" stroke="#b0b8c1" />
+                <YAxis stroke="#b0b8c1" />
+                <Tooltip contentStyle={{ backgroundColor: '#232a34', borderColor: '#00bcd4' }} formatter={(value) => [`$${value.toFixed(2)}`, 'Equity']} />
                 <Legend />
-                <Line 
-                  type="monotone" 
-                  dataKey="equity" 
-                  stroke="#90caf9" 
-                  activeDot={{ r: 8 }} 
-                  name="Account Equity"
-                />
+                <Line type="monotone" dataKey="equity" stroke="#00bcd4" activeDot={{ r: 8 }} name="Account Equity" />
               </LineChart>
             </ResponsiveContainer>
           </Paper>
           
           {/* Monthly Performance */}
-          <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
+          <Paper elevation={6} sx={{ p: 4, mb: 5, border: '1.5px solid #232a34', background: 'rgba(30,34,44,0.85)' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
               <TrendingUpIcon color="primary" sx={{ mr: 1 }} />
               <Typography variant="h5" component="h2">
@@ -237,31 +228,20 @@ const Dashboard = () => {
                 data={stats.monthly_performance}
                 margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                <XAxis 
-                  dataKey="month" 
-                  stroke="rgba(255,255,255,0.7)"
-                />
-                <YAxis stroke="rgba(255,255,255,0.7)" />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#1e1e1e', borderColor: '#333' }}
-                  formatter={(value) => [`$${value.toFixed(2)}`, 'Profit/Loss']}
-                />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
+                <XAxis dataKey="month" stroke="#b0b8c1" />
+                <YAxis stroke="#b0b8c1" />
+                <Tooltip contentStyle={{ backgroundColor: '#232a34', borderColor: '#00bcd4' }} formatter={(value) => [`$${value.toFixed(2)}`, 'Profit/Loss']} />
                 <Legend />
-                <Bar 
-                  dataKey="profit_loss" 
-                  name="Profit/Loss" 
-                  fill="#90caf9"
-                  radius={[4, 4, 0, 0]}
-                />
+                <Bar dataKey="profit_loss" name="Profit/Loss" fill="#00bcd4" radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </Paper>
           
           {/* Distribution Charts */}
-          <Grid container spacing={3} sx={{ mb: 4 }}>
+          <Grid container spacing={4} sx={{ mb: 5, mt: 2 }}>
             <Grid item xs={12} md={4}>
-              <Paper elevation={3} sx={{ p: 3, height: '100%' }}>
+              <Paper elevation={6} sx={{ p: 4, height: '100%', border: '1.5px solid #232a34', background: 'rgba(30,34,44,0.85)' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                   <PieChartIcon color="primary" sx={{ mr: 1 }} />
                   <Typography variant="h6" component="h3">
@@ -277,7 +257,7 @@ const Dashboard = () => {
                       cy="50%"
                       labelLine={false}
                       outerRadius={80}
-                      fill="#8884d8"
+                      fill="#00bcd4"
                       dataKey="value"
                       nameKey="name"
                       label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
@@ -293,7 +273,7 @@ const Dashboard = () => {
             </Grid>
             
             <Grid item xs={12} md={4}>
-              <Paper elevation={3} sx={{ p: 3, height: '100%' }}>
+              <Paper elevation={6} sx={{ p: 4, height: '100%', border: '1.5px solid #232a34', background: 'rgba(30,34,44,0.85)' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                   <PieChartIcon color="primary" sx={{ mr: 1 }} />
                   <Typography variant="h6" component="h3">
@@ -309,13 +289,13 @@ const Dashboard = () => {
                       cy="50%"
                       labelLine={false}
                       outerRadius={80}
-                      fill="#8884d8"
+                      fill="#00bcd4"
                       dataKey="value"
                       nameKey="name"
                       label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                     >
-                      <Cell fill="#66bb6a" />
-                      <Cell fill="#ef5350" />
+                      <Cell fill="#26d782" />
+                      <Cell fill="#ff5370" />
                     </Pie>
                     <Tooltip formatter={(value) => [value, 'Trades']} />
                   </PieChart>
@@ -324,7 +304,7 @@ const Dashboard = () => {
             </Grid>
             
             <Grid item xs={12} md={4}>
-              <Paper elevation={3} sx={{ p: 3, height: '100%' }}>
+              <Paper elevation={6} sx={{ p: 4, height: '100%', border: '1.5px solid #232a34', background: 'rgba(30,34,44,0.85)' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                   <PieChartIcon color="primary" sx={{ mr: 1 }} />
                   <Typography variant="h6" component="h3">
@@ -340,7 +320,7 @@ const Dashboard = () => {
                       cy="50%"
                       labelLine={false}
                       outerRadius={80}
-                      fill="#8884d8"
+                      fill="#00bcd4"
                       dataKey="value"
                       nameKey="name"
                       label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
@@ -356,9 +336,9 @@ const Dashboard = () => {
           </Grid>
           
           {/* Best and Worst Trades */}
-          <Grid container spacing={3} sx={{ mb: 4 }}>
+          <Grid container spacing={4} sx={{ mb: 5, mt: 2 }}>
             <Grid item xs={12} md={6}>
-              <Card elevation={3}>
+              <Card elevation={6} sx={{ p: 2, border: '1.5px solid #232a34', boxShadow: '0 4px 24px 0 #00bcd455', background: 'rgba(36,40,50,0.92)' }}>
                 <CardHeader
                   title="Best Trade"
                   titleTypographyProps={{ variant: 'h6' }}
@@ -415,7 +395,7 @@ const Dashboard = () => {
             </Grid>
             
             <Grid item xs={12} md={6}>
-              <Card elevation={3}>
+              <Card elevation={6} sx={{ p: 2, border: '1.5px solid #232a34', boxShadow: '0 4px 24px 0 #00bcd455', background: 'rgba(36,40,50,0.92)' }}>
                 <CardHeader
                   title="Worst Trade"
                   titleTypographyProps={{ variant: 'h6' }}
