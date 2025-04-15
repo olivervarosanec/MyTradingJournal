@@ -16,6 +16,17 @@ import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import SaveIcon from '@mui/icons-material/Save';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { createTrade } from '../services/api';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import CardHeader from '@mui/material/CardHeader';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import TrendingDownIcon from '@mui/icons-material/TrendingDown';
+
+// Currency formatting function for $1,127,500.00 style
+function formatCurrency(value) {
+  if (value === null || value === undefined || isNaN(value)) return '-';
+  return value.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
 
 const TradeEntry = () => {
   const [formData, setFormData] = useState({
@@ -119,6 +130,24 @@ const TradeEntry = () => {
     }
   };
   
+  // --- Calculation logic for dashboard display ---
+  const isFilled = [formData.volume, formData.entry_price, formData.stop_loss, formData.target_price].every(v => v !== '' && !isNaN(Number(v)));
+  let risk = null, targetPL = null, profitFactor = null;
+  if (isFilled) {
+    const volume = parseFloat(formData.volume);
+    const entry = parseFloat(formData.entry_price);
+    const stop = parseFloat(formData.stop_loss);
+    const target = parseFloat(formData.target_price);
+    if (formData.direction === 'Buy') {
+      risk = (entry - stop) * volume;
+      targetPL = (target - entry) * volume;
+    } else {
+      risk = (stop - entry) * volume;
+      targetPL = (entry - target) * volume;
+    }
+    profitFactor = risk !== 0 ? targetPL / Math.abs(risk) : null;
+  }
+  
   return (
     <Container maxWidth="md">
       <Paper elevation={3} sx={{ p: 4, mt: 2 }}>
@@ -209,6 +238,48 @@ const TradeEntry = () => {
                 inputProps={{ step: 0.01, min: 0.01 }}
               />
             </Grid>
+            
+            {/* Modern Dashboard Display for Trade Metrics */}
+            {isFilled && (
+              <Grid item xs={12}>
+                <Box sx={{ display: 'flex', gap: 4, justifyContent: 'center', my: 3 }}>
+                  <Card elevation={8} sx={{ minWidth: 220, background: 'linear-gradient(135deg, #232a34 60%, #26d782 100%)', color: '#fff', borderRadius: 4, boxShadow: '0 8px 32px 0 #26d78255' }}>
+                    <CardHeader
+                      avatar={<TrendingUpIcon sx={{ color: '#26d782', fontSize: 36 }} />}
+                      title={<Typography variant="h6" sx={{ color: '#26d782', fontWeight: 700 }}>Risk ($)</Typography>}
+                      sx={{ pb: 0 }}
+                    />
+                    <CardContent>
+                      <Typography variant="h3" sx={{ fontWeight: 900, color: risk > 0 ? '#26d782' : '#ff5370', textShadow: '0 2px 12px #0008' }}>
+                        {formatCurrency(risk)}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                  <Card elevation={8} sx={{ minWidth: 220, background: 'linear-gradient(135deg, #232a34 60%, #ffd600 100%)', color: '#232a34', borderRadius: 4, boxShadow: '0 8px 32px 0 #ffd60055' }}>
+                    <CardHeader
+                      title={<Typography variant="h6" sx={{ color: '#ffd600', fontWeight: 700 }}>Target P/L ($)</Typography>}
+                      sx={{ pb: 0 }}
+                    />
+                    <CardContent>
+                      <Typography variant="h3" sx={{ fontWeight: 900, color: targetPL > 0 ? '#26d782' : '#ff5370', textShadow: '0 2px 12px #0008' }}>
+                        {formatCurrency(targetPL)}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                  <Card elevation={8} sx={{ minWidth: 220, background: 'linear-gradient(135deg, #232a34 60%, #ffd600 100%)', color: '#232a34', borderRadius: 4, boxShadow: '0 8px 32px 0 #ffd60055' }}>
+                    <CardHeader
+                      title={<Typography variant="h6" sx={{ color: '#ffd600', fontWeight: 700 }}>Profit Factor</Typography>}
+                      sx={{ pb: 0 }}
+                    />
+                    <CardContent>
+                      <Typography variant="h3" sx={{ fontWeight: 900, color: profitFactor > 1 ? '#26d782' : '#ff5370', textShadow: '0 2px 12px #0008' }}>
+                        {profitFactor !== null && isFinite(profitFactor) ? profitFactor.toFixed(2) : '-'}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Box>
+              </Grid>
+            )}
             
             {/* Date Information */}
             <Grid item xs={12} md={6}>

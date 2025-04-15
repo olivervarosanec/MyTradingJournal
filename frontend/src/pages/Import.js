@@ -14,6 +14,12 @@ import {
 import UploadIcon from '@mui/icons-material/Upload';
 import { createTrade } from '../services/api';
 
+// Currency formatting function for $1,127,500.00 style
+function formatCurrency(value) {
+  if (value === null || value === undefined || isNaN(value)) return '-';
+  return value.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 const Import = () => {
   const [importData, setImportData] = useState('');
   const [loading, setLoading] = useState(false);

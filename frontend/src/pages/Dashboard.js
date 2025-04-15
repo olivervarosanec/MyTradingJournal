@@ -37,6 +37,12 @@ import { format } from 'date-fns';
 // Chart colors
 const COLORS = ['#00bcd4', '#ffd600', '#26d782', '#ff5370', '#42a5f5', '#7e57c2'];
 
+// Currency formatting function for $1,127,500.00 style
+function formatCurrency(value) {
+  if (value === null || value === undefined || isNaN(value)) return '-';
+  return value.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 const Dashboard = () => {
   const [stats, setStats] = useState(null);
   const [trades, setTrades] = useState([]);
@@ -107,11 +113,6 @@ const Dashboard = () => {
     return `${(value * 100).toFixed(1)}%`;
   };
   
-  // Format dollar amount
-  const formatDollar = (value) => {
-    return `$${value.toFixed(2)}`;
-  };
-  
   return (
     <Container maxWidth="lg">
       {loading ? (
@@ -167,7 +168,7 @@ const Dashboard = () => {
                     component="div"
                     color={stats.total_profit_loss > 0 ? 'success.main' : 'error.main'}
                   >
-                    {formatDollar(stats.total_profit_loss)}
+                    {formatCurrency(stats.total_profit_loss)}
                   </Typography>
                 </CardContent>
               </Card>
@@ -207,7 +208,7 @@ const Dashboard = () => {
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
                 <XAxis dataKey="date" stroke="#b0b8c1" />
                 <YAxis stroke="#b0b8c1" />
-                <Tooltip contentStyle={{ backgroundColor: '#232a34', borderColor: '#00bcd4' }} formatter={(value) => [`$${value.toFixed(2)}`, 'Equity']} />
+                <Tooltip contentStyle={{ backgroundColor: '#232a34', borderColor: '#00bcd4' }} formatter={(value) => [`${formatCurrency(value)}`, 'Equity']} />
                 <Legend />
                 <Line type="monotone" dataKey="equity" stroke="#00bcd4" activeDot={{ r: 8 }} name="Account Equity" />
               </LineChart>
@@ -231,7 +232,7 @@ const Dashboard = () => {
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
                 <XAxis dataKey="month" stroke="#b0b8c1" />
                 <YAxis stroke="#b0b8c1" />
-                <Tooltip contentStyle={{ backgroundColor: '#232a34', borderColor: '#00bcd4' }} formatter={(value) => [`$${value.toFixed(2)}`, 'Profit/Loss']} />
+                <Tooltip contentStyle={{ backgroundColor: '#232a34', borderColor: '#00bcd4' }} formatter={(value) => [`${formatCurrency(value)}`, 'Profit/Loss']} />
                 <Legend />
                 <Bar dataKey="profit_loss" name="Profit/Loss" fill="#00bcd4" radius={[8, 8, 0, 0]} />
               </BarChart>
@@ -373,17 +374,17 @@ const Dashboard = () => {
                         </Typography>
                         
                         <Typography variant="body2" color="text.secondary">Entry Price:</Typography>
-                        <Typography variant="body2">${stats.best_trade.entry_price.toFixed(2)}</Typography>
+                        <Typography variant="body2">${formatCurrency(stats.best_trade.entry_price)}</Typography>
                         
                         <Typography variant="body2" color="text.secondary">Exit Price:</Typography>
-                        <Typography variant="body2">${stats.best_trade.exit_price.toFixed(2)}</Typography>
+                        <Typography variant="body2">${formatCurrency(stats.best_trade.exit_price)}</Typography>
                         
                         <Typography variant="body2" color="text.secondary">Volume:</Typography>
                         <Typography variant="body2">{stats.best_trade.volume} shares</Typography>
                         
                         <Typography variant="body2" color="text.secondary">Profit/Loss:</Typography>
                         <Typography variant="body2" color="success.main" fontWeight="bold">
-                          ${stats.best_trade.profit_loss.toFixed(2)}
+                          {formatCurrency(stats.best_trade.profit_loss)}
                         </Typography>
                       </Box>
                     </Box>
@@ -430,17 +431,17 @@ const Dashboard = () => {
                         </Typography>
                         
                         <Typography variant="body2" color="text.secondary">Entry Price:</Typography>
-                        <Typography variant="body2">${stats.worst_trade.entry_price.toFixed(2)}</Typography>
+                        <Typography variant="body2">${formatCurrency(stats.worst_trade.entry_price)}</Typography>
                         
                         <Typography variant="body2" color="text.secondary">Exit Price:</Typography>
-                        <Typography variant="body2">${stats.worst_trade.exit_price.toFixed(2)}</Typography>
+                        <Typography variant="body2">${formatCurrency(stats.worst_trade.exit_price)}</Typography>
                         
                         <Typography variant="body2" color="text.secondary">Volume:</Typography>
                         <Typography variant="body2">{stats.worst_trade.volume} shares</Typography>
                         
                         <Typography variant="body2" color="text.secondary">Profit/Loss:</Typography>
                         <Typography variant="body2" color="error.main" fontWeight="bold">
-                          ${stats.worst_trade.profit_loss.toFixed(2)}
+                          {formatCurrency(stats.worst_trade.profit_loss)}
                         </Typography>
                       </Box>
                     </Box>

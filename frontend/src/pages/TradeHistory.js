@@ -56,6 +56,12 @@ ChartJS.register(
   Legend
 );
 
+// Currency formatting function for $1,127,500.00 style
+function formatCurrency(value) {
+  if (value === null || value === undefined || isNaN(value)) return '-';
+  return value.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 const TradeHistory = () => {
   const [trades, setTrades] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -579,7 +585,7 @@ const TradeHistory = () => {
                       <TableCell>
                         {trade.risk_dollars !== null ? (
                           <Typography>
-                            ${trade.risk_dollars.toFixed(2)}
+                            {formatCurrency(trade.risk_dollars)}
                           </Typography>
                         ) : (
                           <Chip label="-" size="small" />
@@ -588,7 +594,7 @@ const TradeHistory = () => {
                       <TableCell>
                         {trade.target_price !== null && trade.entry_price !== null && trade.volume !== null ? (
                           <Typography>
-                            ${(Math.abs(trade.target_price - trade.entry_price) * trade.volume).toFixed(2)}
+                            {formatCurrency(Math.abs(trade.target_price - trade.entry_price) * trade.volume)}
                           </Typography>
                         ) : (
                           <Chip label="-" size="small" />
@@ -600,7 +606,7 @@ const TradeHistory = () => {
                             color={trade.profit_loss > 0 ? 'success.main' : 'error.main'}
                             fontWeight="bold"
                           >
-                            ${trade.profit_loss.toFixed(2)}
+                            {formatCurrency(trade.profit_loss)}
                           </Typography>
                         ) : (
                           <Chip label="Open" color="warning" size="small" />
@@ -686,26 +692,26 @@ const TradeHistory = () => {
                     <Typography variant="body1">{selectedTrade.volume} shares</Typography>
                     
                     <Typography variant="body2" color="text.secondary">Entry Price:</Typography>
-                    <Typography variant="body1">${selectedTrade.entry_price.toFixed(2)}</Typography>
+                    <Typography variant="body1">{formatCurrency(selectedTrade.entry_price)}</Typography>
                     
                     <Typography variant="body2" color="text.secondary">Exit Price:</Typography>
                     <Typography variant="body1">
                       {selectedTrade.exit_price !== null ? 
-                        `$${selectedTrade.exit_price.toFixed(2)}` : 
+                        formatCurrency(selectedTrade.exit_price) : 
                         '-'}
                     </Typography>
                     
                     <Typography variant="body2" color="text.secondary">Stop Loss:</Typography>
                     <Typography variant="body1">
                       {selectedTrade.stop_loss !== null ? 
-                        `$${selectedTrade.stop_loss.toFixed(2)}` : 
+                        formatCurrency(selectedTrade.stop_loss) : 
                         '-'}
                     </Typography>
                     
                     <Typography variant="body2" color="text.secondary">Target Price:</Typography>
                     <Typography variant="body1">
                       {selectedTrade.target_price !== null ? 
-                        `$${selectedTrade.target_price.toFixed(2)}` : 
+                        formatCurrency(selectedTrade.target_price) : 
                         '-'}
                     </Typography>
                     
@@ -743,14 +749,14 @@ const TradeHistory = () => {
                     <Typography variant="body2" color="text.secondary">Risk ($):</Typography>
                     <Typography variant="body1">
                       {selectedTrade.risk_dollars !== null ? 
-                        `$${selectedTrade.risk_dollars.toFixed(2)}` : 
+                        formatCurrency(selectedTrade.risk_dollars) : 
                         '-'}
                     </Typography>
                     
                     <Typography variant="body2" color="text.secondary">Target P/L ($):</Typography>
                     <Typography variant="body1">
                       {selectedTrade.target_price !== null && selectedTrade.entry_price !== null ? 
-                        `$${(Math.abs(selectedTrade.target_price - selectedTrade.entry_price) * selectedTrade.volume).toFixed(2)}` : 
+                        formatCurrency(Math.abs(selectedTrade.target_price - selectedTrade.entry_price) * selectedTrade.volume) : 
                         '-'}
                     </Typography>
                     
@@ -761,7 +767,7 @@ const TradeHistory = () => {
                       fontWeight="bold"
                     >
                       {selectedTrade.profit_loss !== null ? 
-                        `$${selectedTrade.profit_loss.toFixed(2)}` : 
+                        formatCurrency(selectedTrade.profit_loss) : 
                         '-'}
                     </Typography>
                   </Box>
