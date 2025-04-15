@@ -145,7 +145,10 @@ function App() {
     <ThemeProvider theme={darkTheme}>
       <LocalizationProvider dateAdapter={AdapterDateFns}>
         <CssBaseline />
-        <Router>
+        <Router future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true
+        }}>
           <div className="App">
             <Navigation />
             <main style={{ padding: '20px', marginTop: '64px' }}>
