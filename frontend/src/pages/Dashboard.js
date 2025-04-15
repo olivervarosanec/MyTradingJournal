@@ -113,6 +113,15 @@ const Dashboard = () => {
     return `${(value * 100).toFixed(1)}%`;
   };
   
+  // --- Additional Calculated Stats ---
+  const totalWinnerTrades = trades.filter(trade => trade.profit_loss > 0).length;
+  const totalLoserTrades = trades.filter(trade => trade.profit_loss < 0).length;
+  const currentOpenTrades = trades.filter(trade => trade.exit_date === null || trade.exit_date === undefined).length;
+  const winningTrades = trades.filter(trade => trade.profit_loss > 0);
+  const losingTrades = trades.filter(trade => trade.profit_loss < 0);
+  const avgWinningTrade = winningTrades.length > 0 ? winningTrades.reduce((acc, t) => acc + t.profit_loss, 0) / winningTrades.length : 0;
+  const avgLosingTrade = losingTrades.length > 0 ? losingTrades.reduce((acc, t) => acc + t.profit_loss, 0) / losingTrades.length : 0;
+  
   return (
     <Container maxWidth="lg">
       {loading ? (
@@ -125,63 +134,212 @@ const Dashboard = () => {
         </Typography>
       ) : (
         <>
-          {/* Summary Stats */}
-          <Grid container spacing={4} sx={{ mb: 5, mt: 2 }}>
-            <Grid item xs={12} md={3}>
-              <Card elevation={6} sx={{ p: 2, border: '1.5px solid #232a34', boxShadow: '0 4px 24px 0 #00bcd455', background: 'rgba(36,40,50,0.92)' }}>
+          {/* Modern Control Dashboard Summary Stats */}
+          <Grid container spacing={3} sx={{ mb: 5, mt: 2, flexWrap: 'wrap' }}>
+            {/* Winner Trades */}
+            <Grid item xs={12} sm={6} md={3}>
+              <Card elevation={8} sx={{
+                p: 2,
+                border: '2px solid #26d782',
+                background: 'linear-gradient(135deg, #232a34 80%, #26d782 100%)',
+                color: '#fff',
+                minHeight: 120,
+                transition: 'box-shadow 0.3s, border-color 0.3s',
+                boxShadow: '0 4px 24px 0 #26d78255',
+                '&:hover': {
+                  boxShadow: '0 0 32px 8px #26d782cc, 0 4px 24px 0 #26d78255',
+                  borderColor: '#00ffb0',
+                  zIndex: 2,
+                },
+              }}>
                 <CardContent>
-                  <Typography color="text.secondary" gutterBottom>
-                    Total Trades
+                  <Typography color="#b0b8c1" gutterBottom fontWeight={600}>
+                    Winner Trades
                   </Typography>
-                  <Typography variant="h4" component="div">
-                    {stats.total_trades}
+                  <Typography variant="h4" fontWeight={700}>
+                    {totalWinnerTrades}
                   </Typography>
                 </CardContent>
               </Card>
             </Grid>
-            
-            <Grid item xs={12} md={3}>
-              <Card elevation={6} sx={{ p: 2, border: '1.5px solid #232a34', boxShadow: '0 4px 24px 0 #00bcd455', background: 'rgba(36,40,50,0.92)' }}>
+            {/* Loser Trades */}
+            <Grid item xs={12} sm={6} md={3}>
+              <Card elevation={8} sx={{
+                p: 2,
+                border: '2px solid #ff5370',
+                background: 'linear-gradient(135deg, #232a34 80%, #ff5370 100%)',
+                color: '#fff',
+                minHeight: 120,
+                transition: 'box-shadow 0.3s, border-color 0.3s',
+                boxShadow: '0 4px 24px 0 #ff537055',
+                '&:hover': {
+                  boxShadow: '0 0 32px 8px #ff5370cc, 0 4px 24px 0 #ff537055',
+                  borderColor: '#ff1744',
+                  zIndex: 2,
+                },
+              }}>
                 <CardContent>
-                  <Typography color="text.secondary" gutterBottom>
+                  <Typography color="#b0b8c1" gutterBottom fontWeight={600}>
+                    Loser Trades
+                  </Typography>
+                  <Typography variant="h4" fontWeight={700}>
+                    {totalLoserTrades}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            {/* Open Trades */}
+            <Grid item xs={12} sm={6} md={3}>
+              <Card elevation={8} sx={{
+                p: 2,
+                border: '2px solid #ffd600',
+                background: 'linear-gradient(135deg, #232a34 80%, #ffd600 100%)',
+                color: '#fff',
+                minHeight: 120,
+                transition: 'box-shadow 0.3s, border-color 0.3s',
+                boxShadow: '0 4px 24px 0 #ffd60055',
+                '&:hover': {
+                  boxShadow: '0 0 32px 8px #ffd600cc, 0 4px 24px 0 #ffd60055',
+                  borderColor: '#fff700',
+                  zIndex: 2,
+                },
+              }}>
+                <CardContent>
+                  <Typography color="#b0b8c1" gutterBottom fontWeight={600}>
+                    Open Trades
+                  </Typography>
+                  <Typography variant="h4" fontWeight={700}>
+                    {currentOpenTrades}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            {/* Win Rate */}
+            <Grid item xs={12} sm={6} md={3}>
+              <Card elevation={8} sx={{
+                p: 2,
+                border: '2px solid #42a5f5',
+                background: 'linear-gradient(135deg, #232a34 80%, #42a5f5 100%)',
+                color: '#fff',
+                minHeight: 120,
+                transition: 'box-shadow 0.3s, border-color 0.3s',
+                boxShadow: '0 4px 24px 0 #42a5f555',
+                '&:hover': {
+                  boxShadow: '0 0 32px 8px #42a5f5cc, 0 4px 24px 0 #42a5f555',
+                  borderColor: '#00e5ff',
+                  zIndex: 2,
+                },
+              }}>
+                <CardContent>
+                  <Typography color="#b0b8c1" gutterBottom fontWeight={600}>
                     Win Rate
                   </Typography>
-                  <Typography 
-                    variant="h4" 
-                    component="div"
-                    color={stats.win_rate > 0.5 ? 'success.main' : 'error.main'}
-                  >
+                  <Typography variant="h4" fontWeight={700} color={stats.win_rate > 0.5 ? '#26d782' : '#ff5370'}>
                     {formatPercentage(stats.win_rate)}
                   </Typography>
                 </CardContent>
               </Card>
             </Grid>
-            
-            <Grid item xs={12} md={3}>
-              <Card elevation={6} sx={{ p: 2, border: '1.5px solid #232a34', boxShadow: '0 4px 24px 0 #00bcd455', background: 'rgba(36,40,50,0.92)' }}>
+            {/* Total P/L */}
+            <Grid item xs={12} sm={6} md={3}>
+              <Card elevation={8} sx={{
+                p: 2,
+                border: '2px solid #00bcd4',
+                background: 'linear-gradient(135deg, #232a34 80%, #00bcd4 100%)',
+                color: '#fff',
+                minHeight: 120,
+                transition: 'box-shadow 0.3s, border-color 0.3s',
+                boxShadow: '0 4px 24px 0 #00bcd455',
+                '&:hover': {
+                  boxShadow: '0 0 32px 8px #00bcd4cc, 0 4px 24px 0 #00bcd455',
+                  borderColor: '#00e5ff',
+                  zIndex: 2,
+                },
+              }}>
                 <CardContent>
-                  <Typography color="text.secondary" gutterBottom>
+                  <Typography color="#b0b8c1" gutterBottom fontWeight={600}>
                     Total P/L
                   </Typography>
-                  <Typography 
-                    variant="h4" 
-                    component="div"
-                    color={stats.total_profit_loss > 0 ? 'success.main' : 'error.main'}
-                  >
+                  <Typography variant="h4" fontWeight={700} color={stats.total_profit_loss > 0 ? '#26d782' : '#ff5370'}>
                     {formatCurrency(stats.total_profit_loss)}
                   </Typography>
                 </CardContent>
               </Card>
             </Grid>
-            
-            <Grid item xs={12} md={3}>
-              <Card elevation={6} sx={{ p: 2, border: '1.5px solid #232a34', boxShadow: '0 4px 24px 0 #00bcd455', background: 'rgba(36,40,50,0.92)' }}>
+            {/* Avg. Risk/Reward */}
+            <Grid item xs={12} sm={6} md={3}>
+              <Card elevation={8} sx={{
+                p: 2,
+                border: '2px solid #ffd600',
+                background: 'linear-gradient(135deg, #232a34 80%, #ffd600 100%)',
+                color: '#fff',
+                minHeight: 120,
+                transition: 'box-shadow 0.3s, border-color 0.3s',
+                boxShadow: '0 4px 24px 0 #ffd60055',
+                '&:hover': {
+                  boxShadow: '0 0 32px 8px #ffd600cc, 0 4px 24px 0 #ffd60055',
+                  borderColor: '#fff700',
+                  zIndex: 2,
+                },
+              }}>
                 <CardContent>
-                  <Typography color="text.secondary" gutterBottom>
+                  <Typography color="#b0b8c1" gutterBottom fontWeight={600}>
                     Avg. Risk/Reward
                   </Typography>
-                  <Typography variant="h4" component="div">
+                  <Typography variant="h4" fontWeight={700}>
                     {stats.avg_risk_reward.toFixed(2)}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            {/* Avg. Loss ($) */}
+            <Grid item xs={12} sm={6} md={3}>
+              <Card elevation={8} sx={{
+                p: 2,
+                border: '2px solid #ff5370',
+                background: 'linear-gradient(135deg, #232a34 80%, #ff5370 100%)',
+                color: '#fff',
+                minHeight: 120,
+                transition: 'box-shadow 0.3s, border-color 0.3s',
+                boxShadow: '0 4px 24px 0 #ff537055',
+                '&:hover': {
+                  boxShadow: '0 0 32px 8px #ff5370cc, 0 4px 24px 0 #ff537055',
+                  borderColor: '#ff1744',
+                  zIndex: 2,
+                },
+              }}>
+                <CardContent>
+                  <Typography color="#b0b8c1" gutterBottom fontWeight={600}>
+                    Avg. Loss ($)
+                  </Typography>
+                  <Typography variant="h4" fontWeight={700}>
+                    {formatCurrency(avgLosingTrade)}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            {/* Avg. Win ($) */}
+            <Grid item xs={12} sm={6} md={3}>
+              <Card elevation={8} sx={{
+                p: 2,
+                border: '2px solid #26d782',
+                background: 'linear-gradient(135deg, #232a34 80%, #26d782 100%)',
+                color: '#fff',
+                minHeight: 120,
+                transition: 'box-shadow 0.3s, border-color 0.3s',
+                boxShadow: '0 4px 24px 0 #26d78255',
+                '&:hover': {
+                  boxShadow: '0 0 32px 8px #26d782cc, 0 4px 24px 0 #26d78255',
+                  borderColor: '#00ffb0',
+                  zIndex: 2,
+                },
+              }}>
+                <CardContent>
+                  <Typography color="#b0b8c1" gutterBottom fontWeight={600}>
+                    Avg. Win ($)
+                  </Typography>
+                  <Typography variant="h4" fontWeight={700}>
+                    {formatCurrency(avgWinningTrade)}
                   </Typography>
                 </CardContent>
               </Card>
