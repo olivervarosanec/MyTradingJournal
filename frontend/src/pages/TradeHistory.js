@@ -402,7 +402,7 @@ const TradeHistory = () => {
   };
   
   return (
-    <Container maxWidth="lg">
+    <Container maxWidth="xl">
       <Paper elevation={3} sx={{ p: 3, mt: 2 }}>
         <Typography variant="h4" component="h1" gutterBottom color="primary">
           Trade History
@@ -432,7 +432,7 @@ const TradeHistory = () => {
           <Typography color="error" align="center">{error}</Typography>
         ) : (
           <TableContainer>
-            <Table>
+            <Table sx={{ minWidth: 1200 }}>
               <TableHead>
                 <TableRow>
                   <TableCell>
@@ -473,11 +473,38 @@ const TradeHistory = () => {
                   </TableCell>
                   <TableCell>
                     <TableSortLabel
+                      active={orderBy === 'profit_factor'}
+                      direction={orderBy === 'profit_factor' ? order : 'asc'}
+                      onClick={() => handleRequestSort('profit_factor')}
+                    >
+                      Profit Factor
+                    </TableSortLabel>
+                  </TableCell>
+                  <TableCell>
+                    <TableSortLabel
+                      active={orderBy === 'risk_dollars'}
+                      direction={orderBy === 'risk_dollars' ? order : 'asc'}
+                      onClick={() => handleRequestSort('risk_dollars')}
+                    >
+                      Risk ($)
+                    </TableSortLabel>
+                  </TableCell>
+                  <TableCell>
+                    <TableSortLabel
+                      active={orderBy === 'profit_dollars'}
+                      direction={orderBy === 'profit_dollars' ? order : 'asc'}
+                      onClick={() => handleRequestSort('profit_dollars')}
+                    >
+                      Target P/L ($)
+                    </TableSortLabel>
+                  </TableCell>
+                  <TableCell>
+                    <TableSortLabel
                       active={orderBy === 'profit_loss'}
                       direction={orderBy === 'profit_loss' ? order : 'asc'}
                       onClick={() => handleRequestSort('profit_loss')}
                     >
-                      P/L
+                      P/L ($)
                     </TableSortLabel>
                   </TableCell>
                   <TableCell>
@@ -495,7 +522,7 @@ const TradeHistory = () => {
               <TableBody>
                 {filteredTrades.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} align="center">
+                    <TableCell colSpan={10} align="center">
                       No trades found
                     </TableCell>
                   </TableRow>
@@ -522,6 +549,33 @@ const TradeHistory = () => {
                       </TableCell>
                       <TableCell>
                         {trade.exit_date ? format(new Date(trade.exit_date), 'MMM dd, yyyy HH:mm') : <Chip label="Open" color="warning" size="small" />}
+                      </TableCell>
+                      <TableCell>
+                        {trade.profit_factor !== null ? (
+                          <Typography>
+                            {trade.profit_factor.toFixed(2)}
+                          </Typography>
+                        ) : (
+                          <Chip label="-" size="small" />
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {trade.risk_dollars !== null ? (
+                          <Typography>
+                            ${trade.risk_dollars.toFixed(2)}
+                          </Typography>
+                        ) : (
+                          <Chip label="-" size="small" />
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {trade.target_price !== null && trade.entry_price !== null && trade.volume !== null ? (
+                          <Typography>
+                            ${(Math.abs(trade.target_price - trade.entry_price) * trade.volume).toFixed(2)}
+                          </Typography>
+                        ) : (
+                          <Chip label="-" size="small" />
+                        )}
                       </TableCell>
                       <TableCell>
                         {trade.profit_loss !== null && trade.profit_loss !== undefined ? (
@@ -638,8 +692,14 @@ const TradeHistory = () => {
                     <Typography variant="body2" color="text.secondary">R:R Ratio:</Typography>
                     <Typography variant="body1">{selectedTrade.risk_reward.toFixed(2)}</Typography>
                     
+                    <Typography variant="body2" color="text.secondary">Profit Factor:</Typography>
+                    <Typography variant="body1">{selectedTrade.profit_factor.toFixed(2)}</Typography>
+                    
                     <Typography variant="body2" color="text.secondary">Risk ($):</Typography>
                     <Typography variant="body1">${selectedTrade.risk_dollars.toFixed(2)}</Typography>
+                    
+                    <Typography variant="body2" color="text.secondary">Target P/L ($):</Typography>
+                    <Typography variant="body1">${(Math.abs(selectedTrade.target_price - selectedTrade.entry_price) * selectedTrade.volume).toFixed(2)}</Typography>
                     
                     <Typography variant="body2" color="text.secondary">P/L:</Typography>
                     <Typography 

@@ -23,6 +23,7 @@ class Trade(db.Model):
     profit_per_share = db.Column(db.Float)
     risk_dollars = db.Column(db.Float)
     profit_dollars = db.Column(db.Float)
+    profit_factor = db.Column(db.Float)
     cumulative_equity = db.Column(db.Float)
     
     # Metadata
@@ -63,20 +64,29 @@ class Trade(db.Model):
             if self.direction == 'Buy':
                 self.risk_per_share = self.entry_price - self.stop_loss
                 self.profit_per_share = self.exit_price - self.entry_price
+                self.risk_dollars = self.risk_per_share * self.volume
+                self.profit_dollars = self.profit_per_share * self.volume
             else:  # Short
                 self.risk_per_share = self.stop_loss - self.entry_price
                 self.profit_per_share = self.entry_price - self.exit_price
+                self.risk_dollars = self.risk_per_share * self.volume
+                self.profit_dollars = self.profit_per_share * self.volume
             
             # Calculate risk in dollars
-            self.risk_dollars = self.risk_per_share * self.volume
+            self.risk_dollars = abs(self.risk_per_share * self.volume)
             
             # Calculate profit/loss
             self.profit_loss = self.profit_per_share * self.volume
-            self.profit_dollars = self.profit_loss
             
-            # Calculate risk/reward ratio
+            # Calculate profit factor
             potential_reward = abs(self.target_price - self.entry_price)
             potential_risk = abs(self.stop_loss - self.entry_price)
+            if potential_risk != 0:
+                self.profit_factor = potential_reward / potential_risk
+            else:
+                self.profit_factor = 0
+            
+            # Calculate risk/reward ratio
             if potential_risk != 0:
                 self.risk_reward = potential_reward / potential_risk
             else:
@@ -89,19 +99,27 @@ class Trade(db.Model):
             time_diff = now_naive - entry_date_naive
             self.days_held = time_diff.total_seconds() / (24 * 3600)
             self.capital_invested = self.volume * self.entry_price
+            
             if self.direction == 'Buy':
                 self.risk_per_share = self.entry_price - self.stop_loss
             else:
                 self.risk_per_share = self.stop_loss - self.entry_price
+                
+            # Calculate risk in dollars for open trades
+            self.risk_dollars = abs(self.risk_per_share * self.volume)
+            
             self.profit_per_share = None
-            self.risk_dollars = self.risk_per_share * self.volume
             self.profit_loss = None
             self.profit_dollars = None
+            
+            # Calculate profit factor for open trades
             potential_reward = abs(self.target_price - self.entry_price)
             potential_risk = abs(self.stop_loss - self.entry_price)
             if potential_risk != 0:
+                self.profit_factor = potential_reward / potential_risk
                 self.risk_reward = potential_reward / potential_risk
             else:
+                self.profit_factor = 0
                 self.risk_reward = 0
             
     def to_dict(self):
@@ -124,6 +142,7 @@ class Trade(db.Model):
             'profit_per_share': self.profit_per_share,
             'risk_dollars': self.risk_dollars,
             'profit_dollars': self.profit_dollars,
+            'profit_factor': self.profit_factor,
             'cumulative_equity': self.cumulative_equity,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
