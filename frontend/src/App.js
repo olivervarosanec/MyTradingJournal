@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { useMediaQuery } from '@mui/material';
 import CssBaseline from '@mui/material/CssBaseline';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -143,11 +142,7 @@ const darkTheme = createTheme({
 });
 
 function App() {
-  const isMobile = useMediaQuery(darkTheme.breakpoints.down('sm'));
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  
-  // No automatic toggle based on screen size - sidebar always starts closed
-  // We're removing the useEffect hook that was changing state based on screen size
 
   const handleSidebarToggle = () => {
     setSidebarOpen(!sidebarOpen);

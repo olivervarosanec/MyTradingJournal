@@ -14,12 +14,6 @@ import {
 import UploadIcon from '@mui/icons-material/Upload';
 import { createTrade } from '../services/api';
 
-// Currency formatting function for $1,127,500.00 style
-function formatCurrency(value) {
-  if (value === null || value === undefined || isNaN(value)) return '-';
-  return value.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
 const Import = () => {
   const [importData, setImportData] = useState('');
   const [loading, setLoading] = useState(false);
@@ -57,10 +51,6 @@ const Import = () => {
 
   // Transform brokerage transaction to trade format
   const transformTransaction = (transaction) => {
-    // Default values for required fields
-    const defaultStopLoss = 0;
-    const defaultTargetPrice = 0;
-    
     // Basic mapping
     const tradeData = {
       ticker: transaction.Symbol,

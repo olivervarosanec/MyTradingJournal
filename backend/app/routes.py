@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from .models import Trade
 from . import db
-from datetime import datetime
+from datetime import datetime, timedelta
 import yfinance as yf
 import pandas as pd
 
@@ -225,14 +225,60 @@ def get_stock_chart(ticker):
     start_date = request.args.get('start')
     end_date = request.args.get('end')
     
-    # Download data from Yahoo Finance
+    # Prepare candidate symbols – try the original first, then Yahoo-friendly variants
+    candidates = []
+    if ticker:
+        candidates.append(ticker)
+        alt = ticker.replace('.', '-')
+        if alt not in candidates:
+            candidates.append(alt)
+    
+    # Build safe date parameters for yfinance
+    date_kwargs = {}
+    start_dt = None
+    end_dt = None
     try:
-        data = yf.download(ticker, start=start_date, end=end_date)
-        if data.empty:
-            return jsonify({"error": "No data available for this ticker"}), 404
-            
-        # Convert to dictionary format for JSON response
-        data_dict = data.reset_index().to_dict(orient='records')
-        return jsonify(data_dict)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500 
+        if start_date:
+            start_dt = datetime.strptime(start_date, '%Y-%m-%d')
+        if end_date:
+            end_dt = datetime.strptime(end_date, '%Y-%m-%d')
+    except ValueError:
+        # Ignore invalid date formats and fall back to period-based download
+        start_dt = None
+        end_dt = None
+    
+    if start_dt and not end_dt:
+        end_dt = start_dt + timedelta(days=20)
+    if end_dt and not start_dt:
+        start_dt = end_dt - timedelta(days=20)
+    if start_dt and end_dt:
+        if start_dt >= end_dt:
+            end_dt = start_dt + timedelta(days=1)
+        date_kwargs = {
+            'start': start_dt.strftime('%Y-%m-%d'),
+            'end': end_dt.strftime('%Y-%m-%d')
+        }
+    
+    last_error = None
+    for symbol in candidates:
+        try:
+            if date_kwargs:
+                data = yf.download(symbol, progress=False, **date_kwargs)
+            else:
+                data = yf.download(symbol, period='6mo', progress=False)
+
+            if data.empty and date_kwargs:
+                # Fallback: try a period-based history fetch if date constrained download returned nothing
+                fallback = yf.Ticker(symbol).history(period='6mo')
+                data = fallback
+
+            if not data.empty:
+                data_dict = data.reset_index().to_dict(orient='records')
+                return jsonify(data_dict)
+        except Exception as e:
+            last_error = str(e)
+            continue
+
+    if last_error:
+        return jsonify({"error": last_error}), 500
+    return jsonify({"error": "No data available for this ticker"}), 404
