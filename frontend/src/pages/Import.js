@@ -51,10 +51,6 @@ const Import = () => {
 
   // Transform brokerage transaction to trade format
   const transformTransaction = (transaction) => {
-    // Default values for required fields
-    const defaultStopLoss = 0;
-    const defaultTargetPrice = 0;
-    
     // Basic mapping
     const tradeData = {
       ticker: transaction.Symbol,

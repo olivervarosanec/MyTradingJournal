@@ -20,8 +20,6 @@ import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import HistoryIcon from '@mui/icons-material/History';
 import UploadIcon from '@mui/icons-material/Upload';
 import MenuIcon from '@mui/icons-material/Menu';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import './NavigationGlow.css';
 
 const Navigation = ({ isOpen, onToggle }) => {
